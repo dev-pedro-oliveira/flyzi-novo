@@ -4,12 +4,15 @@ import com.flyzi.backend.model.Aeroporto;
 import com.flyzi.backend.model.Voo;
 import com.flyzi.backend.repository.AeroportoRepository;
 import com.flyzi.backend.repository.VooRepository;
+import com.flyzi.backend.service.KiwiService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class DataSeeder implements CommandLineRunner {
@@ -19,6 +22,9 @@ public class DataSeeder implements CommandLineRunner {
 
     @Autowired
     private VooRepository vooRepository;
+
+    @Autowired
+    private KiwiService kiwiService;
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
@@ -33,7 +39,7 @@ public class DataSeeder implements CommandLineRunner {
         System.out.println("🗑️  Base de dados limpa\n");
 
         carregarAeroportosBrasileiros();
-        criarVoosRealistas();
+        buscarVoosReais();
 
         System.out.println("\n========================================");
         System.out.println("✅ CARREGAMENTO COMPLETO!");
@@ -70,96 +76,181 @@ public class DataSeeder implements CommandLineRunner {
             }
         }
 
-        System.out.println("\n📊 Total de aeroportos carregados: " + totalAeroportos + "\n");
+        System.out.println("\n📊 Total de aeroportos: " + totalAeroportos + "\n");
     }
 
-    private void criarVoosRealistas() {
-        System.out.println("🔍 CRIANDO VOOS REALISTAS");
+    private void buscarVoosReais() {
+        System.out.println("🔍 BUSCANDO VOOS COM DADOS REAIS\n");
         
-        LocalDate dataIda = LocalDate.now().plusDays(10);
-        String dataIdaStr = dataIda.format(FORMATTER);
-
-        Object[][] voos = {
-            // GRU → GIG (São Paulo → Rio)
-            {"GRU", "GIG", 350.0, "LATAM", "09:00 - 11:30", "2h 30m", 150, "Direto", 525, "Brasil"},
-            {"GRU", "GIG", 420.0, "Gol", "11:00 - 13:15", "2h 15m", 135, "Direto", 630, "Brasil"},
-            {"GRU", "GIG", 380.0, "Azul", "14:00 - 16:45", "2h 45m", 165, "Direto", 570, "Brasil"},
-            
-            // GRU → SSA (São Paulo → Salvador)
-            {"GRU", "SSA", 280.0, "LATAM", "08:30 - 11:45", "3h 15m", 195, "Direto", 420, "Brasil"},
-            {"GRU", "SSA", 310.0, "Gol", "10:00 - 13:30", "3h 30m", 210, "Direto", 465, "Brasil"},
-            {"GRU", "SSA", 295.0, "Azul", "15:45 - 19:00", "3h 15m", 195, "Direto", 442, "Brasil"},
-            
-            // GRU → REC (São Paulo → Recife)
-            {"GRU", "REC", 290.0, "LATAM", "07:00 - 10:15", "3h 15m", 195, "Direto", 435, "Brasil"},
-            {"GRU", "REC", 320.0, "Gol", "09:30 - 12:45", "3h 15m", 195, "Direto", 480, "Brasil"},
-            {"GRU", "REC", 305.0, "Azul", "16:00 - 19:15", "3h 15m", 195, "Direto", 457, "Brasil"},
-            
-            // GIG → SSA (Rio → Salvador)
-            {"GIG", "SSA", 250.0, "LATAM", "10:00 - 12:45", "2h 45m", 165, "Direto", 375, "Brasil"},
-            {"GIG", "SSA", 275.0, "Gol", "13:00 - 15:45", "2h 45m", 165, "Direto", 412, "Brasil"},
-            
-            // GIG → BSB (Rio → Brasília)
-            {"GIG", "BSB", 320.0, "LATAM", "08:00 - 09:45", "1h 45m", 105, "Direto", 480, "Brasil"},
-            {"GIG", "BSB", 340.0, "Gol", "11:00 - 12:45", "1h 45m", 105, "Direto", 510, "Brasil"},
-            
-            // BSB → CWB (Brasília → Curitiba)
-            {"BSB", "CWB", 380.0, "LATAM", "09:30 - 11:45", "2h 15m", 135, "Direto", 570, "Brasil"},
-            {"BSB", "CWB", 395.0, "Gol", "14:00 - 16:15", "2h 15m", 135, "Direto", 592, "Brasil"},
-            
-            // CWB → POA (Curitiba → Porto Alegre)
-            {"CWB", "POA", 280.0, "LATAM", "10:00 - 11:45", "1h 45m", 105, "Direto", 420, "Brasil"},
-            {"CWB", "POA", 295.0, "Gol", "15:30 - 17:15", "1h 45m", 105, "Direto", 442, "Brasil"},
-            
-            // GRU → BSB (São Paulo → Brasília)
-            {"GRU", "BSB", 320.0, "LATAM", "08:00 - 09:45", "1h 45m", 105, "Direto", 480, "Brasil"},
-            {"GRU", "BSB", 340.0, "Gol", "12:30 - 14:15", "1h 45m", 105, "Direto", 510, "Brasil"},
-            
-            // GRU → FOR (São Paulo → Fortaleza)
-            {"GRU", "FOR", 310.0, "LATAM", "07:00 - 10:30", "3h 30m", 210, "Direto", 465, "Brasil"},
-            {"GRU", "FOR", 340.0, "Gol", "09:00 - 12:30", "3h 30m", 210, "Direto", 510, "Brasil"},
-            
-            // GRU → BEL (São Paulo → Belém)
-            {"GRU", "BEL", 350.0, "LATAM", "08:30 - 12:00", "3h 30m", 210, "Direto", 525, "Brasil"},
-            {"GRU", "BEL", 375.0, "Gol", "10:00 - 13:30", "3h 30m", 210, "Direto", 562, "Brasil"},
-            
-            // SSA → REC (Salvador → Recife)
-            {"SSA", "REC", 180.0, "LATAM", "11:00 - 12:30", "1h 30m", 90, "Direto", 270, "Brasil"},
-            {"SSA", "REC", 195.0, "Gol", "14:00 - 15:30", "1h 30m", 90, "Direto", 292, "Brasil"},
+        // Rotas principais
+        String[][] rotas = {
+            {"GRU", "GIG"},
+            {"GRU", "SSA"},
+            {"GRU", "REC"},
+            {"GRU", "BEL"},
+            {"GRU", "FOR"},
+            {"GRU", "CWB"},
+            {"GRU", "POA"},
+            {"GRU", "MAO"},
+            {"GIG", "SSA"},
+            {"GIG", "BSB"},
+            {"GIG", "REC"},
+            {"SSA", "REC"},
+            {"BSB", "CWB"},
+            {"CWB", "POA"},
+            {"GRU", "BSB"}
         };
 
-        int totalVoos = 0;
-        for (Object[] vooData : voos) {
-            try {
-                Voo voo = new Voo();
-                
-                voo.setOrigem((String) vooData[0]);
-                voo.setDestino((String) vooData[1]);
-                voo.setPreco((Double) vooData[2]);
-                voo.setCompanhia((String) vooData[3]);
-                voo.setHorario((String) vooData[4]);
-                voo.setDuracaoTexto((String) vooData[5]);
-                voo.setDuracaoMinutos((Integer) vooData[6]);
-                voo.setTipo((String) vooData[7]);
-                voo.setMilhasNum((Integer) vooData[8]);
-                voo.setContinente((String) vooData[9]);
-                
-                voo.setDescricaoRota(voo.getOrigem() + " → " + voo.getDestino());
-                voo.setData(dataIdaStr);
-                voo.setDataISO(LocalDate.now().toString());
-                voo.setClasseCor("blue");
-                voo.setMilhasFormatado(String.format("%,d", voo.getMilhasNum()).replace(",", "."));
-                voo.setTeveQueda(Math.random() < 0.1); // 10% chance de preço caiu
-                voo.setCategoria("Doméstico");
+        LocalDate dataIda = LocalDate.now().plusDays(10);
+        LocalDate dataVolta = LocalDate.now().plusDays(17);
+        
+        String dataIdaFormatada = dataIda.format(FORMATTER);
+        String dataVoltaFormatada = dataVolta.format(FORMATTER);
 
-                vooRepository.save(voo);
-                totalVoos++;
+        System.out.println("📅 Data de Ida: " + dataIdaFormatada);
+        System.out.println("📅 Data de Volta: " + dataVoltaFormatada);
+        System.out.println("🚀 Buscando em " + rotas.length + " rotas...\n");
+
+        int totalVoos = 0;
+        int voosComSucesso = 0;
+        int voosComFallback = 0;
+
+        for (String[] rota : rotas) {
+            String origem = rota[0];
+            String destino = rota[1];
+
+            System.out.println("🔄 Buscando: " + origem + " → " + destino);
+
+            try {
+                // Tentar buscar dados reais da API Kiwi.com
+                List<Map<String, Object>> voos = kiwiService.buscarVoos(origem, destino, dataIdaFormatada, dataVoltaFormatada);
+
+                if (voos != null && !voos.isEmpty()) {
+                    for (Map<String, Object> vooData : voos) {
+                        try {
+                            Voo voo = new Voo();
+                            
+                            voo.setOrigem(getStringValue(vooData, "origem", origem));
+                            voo.setDestino(getStringValue(vooData, "destino", destino));
+                            voo.setDescricaoRota(voo.getOrigem() + " → " + voo.getDestino());
+                            voo.setData(getStringValue(vooData, "data", dataIdaFormatada));
+                            voo.setDataISO(LocalDate.now().toString());
+                            voo.setHorario(getStringValue(vooData, "horario", "10:00 - 18:00"));
+                            voo.setDuracaoTexto(getStringValue(vooData, "duracaoTexto", "2h 30m"));
+                            voo.setDuracaoMinutos(getIntValue(vooData, "duracaoMinutos", 150));
+                            voo.setTipo(getStringValue(vooData, "tipo", "Direto"));
+                            voo.setPreco(getDoubleValue(vooData, "preco", 350.0));
+                            voo.setCompanhia(getStringValue(vooData, "companhia", "LATAM"));
+                            voo.setClasseCor("blue");
+                            voo.setMilhasNum(getIntValue(vooData, "milhasNum", 1500));
+                            voo.setMilhasFormatado(getStringValue(vooData, "milhasFormatado", "1.500"));
+                            voo.setTeveQueda(Math.random() < 0.15); // 15% chance
+                            voo.setContinente("América do Sul");
+                            voo.setCategoria("Doméstico");
+
+                            vooRepository.save(voo);
+                            totalVoos++;
+                            voosComSucesso++;
+
+                        } catch (Exception e) {
+                            System.err.println("   ⚠️  Erro ao salvar voo: " + e.getMessage());
+                        }
+                    }
+                    System.out.println("   ✅ " + voos.size() + " voos reais carregados\n");
+
+                } else {
+                    System.out.println("   ⚠️  Nenhum voo encontrado na API, usando dados fallback\n");
+                    criarVooFallback(origem, destino, dataIdaFormatada);
+                    totalVoos++;
+                    voosComFallback++;
+                }
 
             } catch (Exception e) {
-                System.err.println("⚠️  Erro ao salvar voo: " + e.getMessage());
+                System.err.println("   ❌ Erro ao buscar (usando fallback): " + e.getMessage() + "\n");
+                criarVooFallback(origem, destino, dataIdaFormatada);
+                totalVoos++;
+                voosComFallback++;
+            }
+
+            try {
+                Thread.sleep(800);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
         }
 
-        System.out.println("📊 Total de voos carregados: " + totalVoos + "\n");
+        System.out.println("📊 Resumo:");
+        System.out.println("   ✅ Voos com dados REAIS: " + voosComSucesso);
+        System.out.println("   ⚠️  Voos com dados FALLBACK: " + voosComFallback);
+        System.out.println("   📊 Total de voos: " + totalVoos + "\n");
+    }
+
+    private void criarVooFallback(String origem, String destino, String data) {
+        try {
+            Voo voo = new Voo();
+            
+            voo.setOrigem(origem);
+            voo.setDestino(destino);
+            voo.setDescricaoRota(origem + " → " + destino);
+            voo.setData(data);
+            voo.setDataISO(LocalDate.now().toString());
+            voo.setHorario("10:00 - 13:00");
+            voo.setDuracaoTexto("3h 0m");
+            voo.setDuracaoMinutos(180);
+            voo.setTipo("Direto");
+            voo.setPreco(350.0 + (Math.random() * 200)); // R$ 350 a R$ 550
+            voo.setCompanhia(new String[]{"LATAM", "Gol", "Azul"}[(int)(Math.random() * 3)]);
+            voo.setClasseCor("blue");
+            
+            long milhas = (long) (voo.getPreco() * 4.0 + (Math.random() * 1000));
+            voo.setMilhasNum((int) milhas);
+            voo.setMilhasFormatado(String.format("%,d", milhas).replace(",", "."));
+            
+            voo.setTeveQueda(Math.random() < 0.15);
+            voo.setContinente("América do Sul");
+            voo.setCategoria("Doméstico");
+
+            vooRepository.save(voo);
+            System.out.println("   💾 Voo fallback criado (Preço: R$ " + String.format("%.2f", voo.getPreco()) + ")");
+
+        } catch (Exception e) {
+            System.err.println("   ❌ Erro ao criar fallback: " + e.getMessage());
+        }
+    }
+
+    // ============================================================
+    // FUNÇÕES AUXILIARES
+    // ============================================================
+
+    private String getStringValue(Map<String, Object> map, String key, String defaultValue) {
+        if (map == null) return defaultValue;
+        Object value = map.get(key);
+        return value != null ? value.toString() : defaultValue;
+    }
+
+    private int getIntValue(Map<String, Object> map, String key, int defaultValue) {
+        if (map == null) return defaultValue;
+        Object value = map.get(key);
+        if (value == null) return defaultValue;
+        if (value instanceof Integer) return (Integer) value;
+        if (value instanceof Number) return ((Number) value).intValue();
+        try {
+            return Integer.parseInt(value.toString());
+        } catch (Exception e) {
+            return defaultValue;
+        }
+    }
+
+    private double getDoubleValue(Map<String, Object> map, String key, double defaultValue) {
+        if (map == null) return defaultValue;
+        Object value = map.get(key);
+        if (value == null) return defaultValue;
+        if (value instanceof Double) return (Double) value;
+        if (value instanceof Number) return ((Number) value).doubleValue();
+        try {
+            return Double.parseDouble(value.toString());
+        } catch (Exception e) {
+            return defaultValue;
+        }
     }
 }
