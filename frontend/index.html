@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flyzi - Sua jornada começa aqui</title>
+    <link rel="stylesheet" href="style-landing.css">
+</head>
+<body>
+
+    <div class="hero">
+        
+        <!-- Logo -->
+        <div class="logo-container">
+            <svg viewBox="0 0 800 400" class="logo-svg">
+                <defs>
+                    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#7ab3ff;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#4a90e2;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                <text x="400" y="240" font-size="160" font-weight="800" fill="url(#logoGradient)" text-anchor="middle" font-family="Outfit, sans-serif">Flyzi</text>
+            </svg>
+        </div>
+
+        <!-- Formulário de Busca -->
+        <form id="search-form" class="search-form">
+            
+            <!-- Checkbox Ida/Ida e Volta -->
+            <div class="checkbox-wrapper">
+                <label class="custom-checkbox">
+                    <input type="checkbox" id="ida-volta" checked>
+                    <span>Ida e volta</span>
+                </label>
+            </div>
+
+            <!-- Campos de Busca -->
+            <div class="search-fields">
+                
+                <!-- De (OBRIGATÓRIO) -->
+                <div class="field">
+                    <label>📍 De *</label>
+                    <select id="origem" required>
+                        <option value="">Selecione</option>
+                        <option value="GRU">São Paulo (GRU)</option>
+                        <option value="GIG">Rio de Janeiro (GIG)</option>
+                        <option value="BSB">Brasília (BSB)</option>
+                        <option value="SSA">Salvador (SSA)</option>
+                        <option value="REC">Recife (REC)</option>
+                        <option value="FOR">Fortaleza (FOR)</option>
+                        <option value="CWB">Curitiba (CWB)</option>
+                        <option value="POA">Porto Alegre (POA)</option>
+                    </select>
+                </div>
+
+                <!-- Para (OPCIONAL) -->
+                <div class="field">
+                    <label>✈️ Para</label>
+                    <select id="destino">
+                        <option value="">Qualquer lugar</option>
+                        <option value="LIS">Lisboa (LIS)</option>
+                        <option value="CDG">Paris (CDG)</option>
+                        <option value="MIA">Miami (MIA)</option>
+                        <option value="NRT">Tokyo (NRT)</option>
+                        <option value="BRC">Buenos Aires (BRC)</option>
+                        <option value="BCN">Barcelona (BCN)</option>
+                        <option value="FCO">Roma (FCO)</option>
+                        <option value="AMS">Amsterdam (AMS)</option>
+                        <option value="BER">Berlim (BER)</option>
+                        <option value="MAD">Madri (MAD)</option>
+                    </select>
+                </div>
+
+                <!-- Data de Ida (OPCIONAL) -->
+                <div class="field">
+                    <label>📅 Ida</label>
+                    <input type="text" id="data-ida" readonly placeholder="dd/mm/aaaa">
+                    <div class="calendar-popup" id="calendar-ida"></div>
+                </div>
+
+                <!-- Data de Volta (OPCIONAL) -->
+                <div class="field" id="volta-field">
+                    <label>📅 Volta</label>
+                    <input type="text" id="data-volta" readonly placeholder="dd/mm/aaaa">
+                    <div class="calendar-popup" id="calendar-volta"></div>
+                </div>
+
+                <!-- Passageiros (OPCIONAL) -->
+                <div class="field">
+                    <label>👥 Passageiros</label>
+                    <select id="passageiros">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                    </select>
+                </div>
+
+                <!-- Botão Buscar -->
+                <button type="submit" class="btn-buscar">Buscar</button>
+            </div>
+
+        </form>
+
+    </div>
+
+    <script src="app-landing.js"></script>
+</body>
+</html>

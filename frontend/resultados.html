@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultados - Flyzi</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <a href="index.html" class="logo-sidebar">
+                <span class="logo-icon">✈️</span>
+                <span class="logo-name">Flyzi</span>
+            </a>
+
+            <div class="busca-info">
+                <h3 id="titulo-busca-sidebar"></h3>
+            </div>
+
+            <!-- Histórico -->
+            <div class="historico-section" id="historico-section">
+                <h5>Buscas Recentes</h5>
+                <div id="historico-list" class="historico-list"></div>
+            </div>
+
+            <div class="filtros-section">
+                <h4>Filtros</h4>
+                
+                <!-- Ordenação -->
+                <div class="filter-group">
+                    <h5>Ordenar Por</h5>
+                    <select id="sort-dropdown" class="sort-select">
+                        <option value="preco-asc">Menor Preço</option>
+                        <option value="preco-desc">Maior Preço</option>
+                        <option value="duracao-asc">Menor Duração</option>
+                        <option value="duracao-desc">Maior Duração</option>
+                    </select>
+                </div>
+
+                <!-- Companhias -->
+                <div class="filter-group">
+                    <h5>Companhia</h5>
+                    <label class="custom-checkbox">
+                        <input type="checkbox" value="Azul" class="filter-companhia">
+                        <span>Azul</span>
+                    </label>
+                    <label class="custom-checkbox">
+                        <input type="checkbox" value="Gol" class="filter-companhia">
+                        <span>Gol</span>
+                    </label>
+                    <label class="custom-checkbox">
+                        <input type="checkbox" value="Latam" class="filter-companhia">
+                        <span>Latam</span>
+                    </label>
+                </div>
+
+                <!-- Diretos -->
+                <div class="filter-group">
+                    <label class="custom-checkbox">
+                        <input type="checkbox" id="filter-diretos">
+                        <span>Apenas voos diretos</span>
+                    </label>
+                </div>
+
+                <!-- Botões -->
+                <div class="button-group">
+                    <button id="btn-aplicar" class="btn-primary">Aplicar</button>
+                    <button id="btn-limpar" class="btn-secondary">Limpar</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-content">
+                    <h2 id="titulo-busca"></h2>
+                    <a href="index.html" class="btn-nova-busca">+ Nova Busca</a>
+                </div>
+            </header>
+
+            <!-- Listagem de Voos -->
+            <section class="voos-section">
+                <div id="voos-container" class="voos-list"></div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Drawer Detalhes do Voo -->
+    <div class="drawer-overlay" id="drawer-overlay"></div>
+    <aside class="drawer" id="drawer-detalhes">
+        <div class="drawer-header">
+            <h3>Detalhes do Voo</h3>
+            <button class="btn-close" id="btn-close-drawer">✕</button>
+        </div>
+        <div class="drawer-body" id="drawer-body"></div>
+        <div class="drawer-footer">
+            <button id="btn-comprar" class="btn-comprar-drawer">Comprar Passagem</button>
+        </div>
+    </aside>
+
+    <!-- Toast Notificação -->
+    <div id="toast" class="toast"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
