@@ -9,6 +9,9 @@ let favoritos = [];
 let historico = [];
 let vooSelecionado = null;
 
+// URL DO BACKEND (MUDE AQUI!)
+const API_URL = 'https://flyzi-novo.onrender.com/api/voos';
+
 // ============================================================
 // INICIALIZAÇÃO
 // ============================================================
@@ -56,10 +59,10 @@ function atualizarTituloBusca() {
 
 async function carregarVoos() {
     try {
-        // Mostrar skeleton loading
+        console.log('Buscando voos de:', searchParams.origem);
         mostrarSkeletonLoading();
         
-        const response = await fetch('http://localhost:8080/api/voos');
+        const response = await fetch(API_URL);
         
         if (!response.ok) {
             throw new Error(`Erro HTTP: ${response.status}`);
