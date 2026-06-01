@@ -4,7 +4,7 @@ import com.flyzi.backend.model.Aeroporto;
 import com.flyzi.backend.model.Voo;
 import com.flyzi.backend.repository.AeroportoRepository;
 import com.flyzi.backend.repository.VooRepository;
-import com.flyzi.backend.service.KiwiService;
+import com.flyzi.backend.service.SkyscannerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -24,7 +24,7 @@ public class DataSeeder implements CommandLineRunner {
     private VooRepository vooRepository;
 
     @Autowired
-    private KiwiService kiwiService;
+    private SkyscannerService skyscannerService;
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
@@ -80,9 +80,8 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     private void buscarVoosReais() {
-        System.out.println("🔍 BUSCANDO VOOS COM DADOS REAIS\n");
+        System.out.println("🔍 BUSCANDO VOOS COM DADOS REAIS DO SKYSCANNER\n");
         
-        // Rotas principais
         String[][] rotas = {
             {"GRU", "GIG"},
             {"GRU", "SSA"},
@@ -122,8 +121,8 @@ public class DataSeeder implements CommandLineRunner {
             System.out.println("🔄 Buscando: " + origem + " → " + destino);
 
             try {
-                // Tentar buscar dados reais da API Kiwi.com
-                List<Map<String, Object>> voos = kiwiService.buscarVoos(origem, destino, dataIdaFormatada, dataVoltaFormatada);
+                // Tentar buscar dados reais da API Skyscanner
+                List<Map<String, Object>> voos = skyscannerService.buscarVoos(origem, destino, dataIdaFormatada, dataVoltaFormatada);
 
                 if (voos != null && !voos.isEmpty()) {
                     for (Map<String, Object> vooData : voos) {
@@ -144,7 +143,7 @@ public class DataSeeder implements CommandLineRunner {
                             voo.setClasseCor("blue");
                             voo.setMilhasNum(getIntValue(vooData, "milhasNum", 1500));
                             voo.setMilhasFormatado(getStringValue(vooData, "milhasFormatado", "1.500"));
-                            voo.setTeveQueda(Math.random() < 0.15); // 15% chance
+                            voo.setTeveQueda(Math.random() < 0.15);
                             voo.setContinente("América do Sul");
                             voo.setCategoria("Doméstico");
 
@@ -156,32 +155,33 @@ public class DataSeeder implements CommandLineRunner {
                             System.err.println("   ⚠️  Erro ao salvar voo: " + e.getMessage());
                         }
                     }
-                    System.out.println("   ✅ " + voos.size() + " voos reais carregados\n");
+                    System.out.println("   ✅ " + voos.size() + " voos REAIS carregados\n");
 
                 } else {
-                    System.out.println("   ⚠️  Nenhum voo encontrado na API, usando dados fallback\n");
+                    System.out.println("   ⚠️  Nenhum voo encontrado, usando dados fallback\n");
                     criarVooFallback(origem, destino, dataIdaFormatada);
                     totalVoos++;
                     voosComFallback++;
                 }
 
             } catch (Exception e) {
-                System.err.println("   ❌ Erro ao buscar (usando fallback): " + e.getMessage() + "\n");
+                System.err.println("   ❌ Erro: " + e.getMessage());
+                System.out.println("   💾 Criando voo fallback...\n");
                 criarVooFallback(origem, destino, dataIdaFormatada);
                 totalVoos++;
                 voosComFallback++;
             }
 
             try {
-                Thread.sleep(800);
+                Thread.sleep(1000);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
         }
 
-        System.out.println("📊 Resumo:");
-        System.out.println("   ✅ Voos com dados REAIS: " + voosComSucesso);
-        System.out.println("   ⚠️  Voos com dados FALLBACK: " + voosComFallback);
+        System.out.println("📊 RESUMO:");
+        System.out.println("   ✅ Voos REAIS do Skyscanner: " + voosComSucesso);
+        System.out.println("   ⚠️  Voos FALLBACK (offline): " + voosComFallback);
         System.out.println("   📊 Total de voos: " + totalVoos + "\n");
     }
 
@@ -198,7 +198,7 @@ public class DataSeeder implements CommandLineRunner {
             voo.setDuracaoTexto("3h 0m");
             voo.setDuracaoMinutos(180);
             voo.setTipo("Direto");
-            voo.setPreco(350.0 + (Math.random() * 200)); // R$ 350 a R$ 550
+            voo.setPreco(350.0 + (Math.random() * 200));
             voo.setCompanhia(new String[]{"LATAM", "Gol", "Azul"}[(int)(Math.random() * 3)]);
             voo.setClasseCor("blue");
             
@@ -211,7 +211,7 @@ public class DataSeeder implements CommandLineRunner {
             voo.setCategoria("Doméstico");
 
             vooRepository.save(voo);
-            System.out.println("   💾 Voo fallback criado (Preço: R$ " + String.format("%.2f", voo.getPreco()) + ")");
+            System.out.println("   💾 Fallback criado (R$ " + String.format("%.2f", voo.getPreco()) + ")");
 
         } catch (Exception e) {
             System.err.println("   ❌ Erro ao criar fallback: " + e.getMessage());
