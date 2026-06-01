@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: flyzi-backend
+    runtime: java
+    runtimeVersion: 21
+    buildCommand: cd backend && mvn clean package -DskipTests
+    startCommand: cd backend && java -jar target/flyzi-backend-0.0.1-SNAPSHOT.jar
+    envVars:
+      - key: PORT
+        value: 8080

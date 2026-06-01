@@ -1,8 +1,0 @@
-[build]
-builder = "nixpacks"
-
-[build.nixpacks]
-providers = ["maven", "java"]
-
-[deploy]
-startCommand = "cd backend && java -jar target/flyzi-backend-0.0.1-SNAPSHOT.jar"
