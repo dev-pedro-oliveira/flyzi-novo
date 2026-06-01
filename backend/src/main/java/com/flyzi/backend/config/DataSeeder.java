@@ -4,15 +4,17 @@ import com.flyzi.backend.model.Aeroporto;
 import com.flyzi.backend.model.Voo;
 import com.flyzi.backend.repository.AeroportoRepository;
 import com.flyzi.backend.repository.VooRepository;
-import com.flyzi.backend.service.SkyscannerService;
+import com.flyzi.backend.service.GoogleFlightsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Component
 public class DataSeeder implements CommandLineRunner {
@@ -24,7 +26,7 @@ public class DataSeeder implements CommandLineRunner {
     private VooRepository vooRepository;
 
     @Autowired
-    private SkyscannerService skyscannerService;
+    private GoogleFlightsService googleFlightsService;
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
@@ -39,7 +41,7 @@ public class DataSeeder implements CommandLineRunner {
         System.out.println("🗑️  Base de dados limpa\n");
 
         carregarAeroportosBrasileiros();
-        buscarVoosReais();
+        buscarVoosReaisMultiplasDatas();
 
         System.out.println("\n========================================");
         System.out.println("✅ CARREGAMENTO COMPLETO!");
@@ -79,8 +81,8 @@ public class DataSeeder implements CommandLineRunner {
         System.out.println("\n📊 Total de aeroportos: " + totalAeroportos + "\n");
     }
 
-    private void buscarVoosReais() {
-        System.out.println("🔍 BUSCANDO VOOS COM DADOS REAIS DO SKYSCANNER\n");
+    private void buscarVoosReaisMultiplasDatas() {
+        System.out.println("🔍 BUSCANDO VOOS COM MÚLTIPLAS DATAS (SEM LIMITE)\n");
         
         String[][] rotas = {
             {"GRU", "GIG"},
@@ -100,89 +102,114 @@ public class DataSeeder implements CommandLineRunner {
             {"GRU", "BSB"}
         };
 
-        LocalDate dataIda = LocalDate.now().plusDays(10);
-        LocalDate dataVolta = LocalDate.now().plusDays(17);
-        
-        String dataIdaFormatada = dataIda.format(FORMATTER);
-        String dataVoltaFormatada = dataVolta.format(FORMATTER);
-
-        System.out.println("📅 Data de Ida: " + dataIdaFormatada);
-        System.out.println("📅 Data de Volta: " + dataVoltaFormatada);
-        System.out.println("🚀 Buscando em " + rotas.length + " rotas...\n");
-
         int totalVoos = 0;
         int voosComSucesso = 0;
         int voosComFallback = 0;
+        Set<String> voosDuplicados = new HashSet<>();
 
+        System.out.println("📅 Buscando voos para os próximos 7 dias");
+        System.out.println("🚀 Buscando em " + rotas.length + " rotas com múltiplas datas...\n");
+
+        // Para cada rota
         for (String[] rota : rotas) {
             String origem = rota[0];
             String destino = rota[1];
 
-            System.out.println("🔄 Buscando: " + origem + " → " + destino);
+            System.out.println("🔄 ROTA: " + origem + " → " + destino);
 
-            try {
-                // Tentar buscar dados reais da API Skyscanner
-                List<Map<String, Object>> voos = skyscannerService.buscarVoos(origem, destino, dataIdaFormatada, dataVoltaFormatada);
+            int voosRota = 0;
 
-                if (voos != null && !voos.isEmpty()) {
-                    for (Map<String, Object> vooData : voos) {
-                        try {
-                            Voo voo = new Voo();
-                            
-                            voo.setOrigem(getStringValue(vooData, "origem", origem));
-                            voo.setDestino(getStringValue(vooData, "destino", destino));
-                            voo.setDescricaoRota(voo.getOrigem() + " → " + voo.getDestino());
-                            voo.setData(getStringValue(vooData, "data", dataIdaFormatada));
-                            voo.setDataISO(LocalDate.now().toString());
-                            voo.setHorario(getStringValue(vooData, "horario", "10:00 - 18:00"));
-                            voo.setDuracaoTexto(getStringValue(vooData, "duracaoTexto", "2h 30m"));
-                            voo.setDuracaoMinutos(getIntValue(vooData, "duracaoMinutos", 150));
-                            voo.setTipo(getStringValue(vooData, "tipo", "Direto"));
-                            voo.setPreco(getDoubleValue(vooData, "preco", 350.0));
-                            voo.setCompanhia(getStringValue(vooData, "companhia", "LATAM"));
-                            voo.setClasseCor("blue");
-                            voo.setMilhasNum(getIntValue(vooData, "milhasNum", 1500));
-                            voo.setMilhasFormatado(getStringValue(vooData, "milhasFormatado", "1.500"));
-                            voo.setTeveQueda(Math.random() < 0.15);
-                            voo.setContinente("América do Sul");
-                            voo.setCategoria("Doméstico");
+            // Buscar para os próximos 5 dias (5, 6, 7, 8, 9 dias no futuro)
+            for (int diasAdelante = 5; diasAdelante <= 9; diasAdelante++) {
+                LocalDate dataIda = LocalDate.now().plusDays(diasAdelante);
+                LocalDate dataVolta = dataIda.plusDays(7); // 7 dias de volta
+                
+                String dataIdaStr = dataIda.format(FORMATTER);
+                String dataVoltaStr = dataVolta.format(FORMATTER);
 
-                            vooRepository.save(voo);
-                            totalVoos++;
-                            voosComSucesso++;
+                System.out.println("   📅 Tentando: " + dataIdaStr + " → " + dataVoltaStr);
 
-                        } catch (Exception e) {
-                            System.err.println("   ⚠️  Erro ao salvar voo: " + e.getMessage());
+                try {
+                    // Buscar dados reais
+                    List<Map<String, Object>> voos = googleFlightsService.buscarVoos(
+                        origem, destino, dataIdaStr, dataVoltaStr
+                    );
+
+                    if (voos != null && !voos.isEmpty()) {
+                        for (Map<String, Object> vooData : voos) {
+                            try {
+                                // Criar chave única para evitar duplicatas
+                                String chaveVoo = origem + "-" + destino + "-" + 
+                                    getStringValue(vooData, "data", "") + "-" +
+                                    getStringValue(vooData, "horario", "") + "-" +
+                                    getDoubleValue(vooData, "preco", 0);
+
+                                if (!voosDuplicados.contains(chaveVoo)) {
+                                    Voo voo = new Voo();
+                                    
+                                    voo.setOrigem(getStringValue(vooData, "origem", origem));
+                                    voo.setDestino(getStringValue(vooData, "destino", destino));
+                                    voo.setDescricaoRota(voo.getOrigem() + " → " + voo.getDestino());
+                                    voo.setData(getStringValue(vooData, "data", dataIdaStr));
+                                    voo.setDataISO(LocalDate.now().toString());
+                                    voo.setHorario(getStringValue(vooData, "horario", "10:00 - 18:00"));
+                                    voo.setDuracaoTexto(getStringValue(vooData, "duracaoTexto", "2h 30m"));
+                                    voo.setDuracaoMinutos(getIntValue(vooData, "duracaoMinutos", 150));
+                                    voo.setTipo(getStringValue(vooData, "tipo", "Direto"));
+                                    voo.setPreco(getDoubleValue(vooData, "preco", 350.0));
+                                    voo.setCompanhia(getStringValue(vooData, "companhia", "LATAM"));
+                                    voo.setClasseCor("blue");
+                                    voo.setMilhasNum(getIntValue(vooData, "milhasNum", 1500));
+                                    voo.setMilhasFormatado(getStringValue(vooData, "milhasFormatado", "1.500"));
+                                    voo.setTeveQueda(Math.random() < 0.15);
+                                    voo.setContinente("América do Sul");
+                                    voo.setCategoria("Doméstico");
+
+                                    vooRepository.save(voo);
+                                    voosDuplicados.add(chaveVoo);
+                                    totalVoos++;
+                                    voosRota++;
+                                    voosComSucesso++;
+                                }
+
+                            } catch (Exception e) {
+                                System.err.println("      ⚠️  Erro ao salvar voo: " + e.getMessage());
+                            }
                         }
-                    }
-                    System.out.println("   ✅ " + voos.size() + " voos REAIS carregados\n");
+                        System.out.println("      ✅ " + voos.size() + " voos encontrados\n");
 
-                } else {
-                    System.out.println("   ⚠️  Nenhum voo encontrado, usando dados fallback\n");
-                    criarVooFallback(origem, destino, dataIdaFormatada);
+                    } else {
+                        System.out.println("      ⚠️  Nenhum voo encontrado\n");
+                    }
+
+                } catch (Exception e) {
+                    System.err.println("      ❌ Erro: " + e.getMessage() + "\n");
+                }
+
+                try {
+                    Thread.sleep(800);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+
+            // Se não encontrou nada em nenhuma data, criar fallback
+            if (voosRota == 0) {
+                System.out.println("   💾 Nenhum voo real encontrado. Criando fallback...");
+                for (int i = 0; i < 3; i++) {
+                    LocalDate data = LocalDate.now().plusDays(5 + i);
+                    criarVooFallback(origem, destino, data.format(FORMATTER));
                     totalVoos++;
                     voosComFallback++;
                 }
-
-            } catch (Exception e) {
-                System.err.println("   ❌ Erro: " + e.getMessage());
-                System.out.println("   💾 Criando voo fallback...\n");
-                criarVooFallback(origem, destino, dataIdaFormatada);
-                totalVoos++;
-                voosComFallback++;
-            }
-
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+                System.out.println("   ✅ 3 voos fallback criados\n");
             }
         }
 
-        System.out.println("📊 RESUMO:");
-        System.out.println("   ✅ Voos REAIS do Skyscanner: " + voosComSucesso);
+        System.out.println("📊 RESUMO FINAL:");
+        System.out.println("   ✅ Voos REAIS do Google Flights: " + voosComSucesso);
         System.out.println("   ⚠️  Voos FALLBACK (offline): " + voosComFallback);
-        System.out.println("   📊 Total de voos: " + totalVoos + "\n");
+        System.out.println("   📊 Total de voos carregados: " + totalVoos + "\n");
     }
 
     private void criarVooFallback(String origem, String destino, String data) {
@@ -211,10 +238,9 @@ public class DataSeeder implements CommandLineRunner {
             voo.setCategoria("Doméstico");
 
             vooRepository.save(voo);
-            System.out.println("   💾 Fallback criado (R$ " + String.format("%.2f", voo.getPreco()) + ")");
 
         } catch (Exception e) {
-            System.err.println("   ❌ Erro ao criar fallback: " + e.getMessage());
+            System.err.println("      ❌ Erro ao criar fallback: " + e.getMessage());
         }
     }
 
