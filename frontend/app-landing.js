@@ -1,20 +1,16 @@
 // ============================================================
-// CAROUSEL
+// CONFIGURAÇÃO
 // ============================================================
 
-function selecionarDestino(codigo, nome) {
-    document.getElementById('destino').value = codigo;
-    // Auto-scroll para formulário
-    document.querySelector('.search-form').scrollIntoView({ behavior: 'smooth' });
-}
+const API_URL = 'https://flyzi-novo.onrender.com/api';
 
 // ============================================================
 // DOM ELEMENTS
 // ============================================================
 
 const idaVoltaCheckbox = document.getElementById('ida-volta');
-const origemInput = document.getElementById('origem');
-const destinoInput = document.getElementById('destino');
+const origemSelect = document.getElementById('origem');
+const destinoSelect = document.getElementById('destino');
 const passageirosInput = document.getElementById('passageiros');
 const dataIdaInput = document.getElementById('data-ida');
 const dataVoltaInput = document.getElementById('data-volta');
@@ -36,24 +32,75 @@ let state = {
     dataVolta: '',
     currentMonth: new Date().getMonth(),
     currentYear: new Date().getFullYear(),
-    activeCalendar: null
+    activeCalendar: null,
+    aeroportos: []
 };
 
 // ============================================================
 // INICIALIZAÇÃO
 // ============================================================
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('🚀 Iniciando Flyzi Landing...');
+    await carregarAeroportos();
     setupEventListeners();
     mostrarVoltaField();
 });
+
+// ============================================================
+// CARREGAR AEROPORTOS DA API
+// ============================================================
+
+async function carregarAeroportos() {
+    try {
+        console.log('📍 Buscando aeroportos da API...');
+        const response = await fetch(API_URL + '/aeroportos');
+        
+        if (!response.ok) {
+            throw new Error(`Erro HTTP: ${response.status}`);
+        }
+        
+        const aeroportos = await response.json();
+        state.aeroportos = aeroportos;
+        
+        console.log('✅ ' + aeroportos.length + ' aeroportos carregados');
+        
+        // Preencher os selects
+        preencherSelects(aeroportos);
+        
+    } catch (error) {
+        console.error('❌ Erro ao carregar aeroportos:', error);
+        origemSelect.innerHTML = '<option value="">Erro ao carregar aeroportos</option>';
+    }
+}
+
+function preencherSelects(aeroportos) {
+    // Preencher Origem
+    origemSelect.innerHTML = '<option value="">Selecione um aeroporto</option>';
+    aeroportos.forEach(aero => {
+        const option = document.createElement('option');
+        option.value = aero.iata;
+        option.textContent = `${aero.iata} - ${aero.nome}`;
+        origemSelect.appendChild(option);
+    });
+
+    // Preencher Destino
+    destinoSelect.innerHTML = '<option value="">Qualquer lugar</option>';
+    aeroportos.forEach(aero => {
+        const option = document.createElement('option');
+        option.value = aero.iata;
+        option.textContent = `${aero.iata} - ${aero.nome}`;
+        destinoSelect.appendChild(option);
+    });
+
+    console.log('✅ Selects preenchidos com aeroportos');
+}
 
 // ============================================================
 // EVENT LISTENERS
 // ============================================================
 
 function setupEventListeners() {
-    // Checkbox Ida/Volta
     idaVoltaCheckbox.addEventListener('change', () => {
         state.idaVolta = idaVoltaCheckbox.checked;
         mostrarVoltaField();
@@ -63,12 +110,11 @@ function setupEventListeners() {
         }
     });
 
-    // Inputs
-    origemInput.addEventListener('change', (e) => {
+    origemSelect.addEventListener('change', (e) => {
         state.origem = e.target.value;
     });
 
-    destinoInput.addEventListener('change', (e) => {
+    destinoSelect.addEventListener('change', (e) => {
         state.destino = e.target.value;
     });
 
@@ -76,24 +122,20 @@ function setupEventListeners() {
         state.passageiros = parseInt(e.target.value);
     });
 
-    // Data de Ida
     dataIdaInput.addEventListener('click', () => {
         abrirCalendar('ida');
     });
 
-    // Data de Volta
     dataVoltaInput.addEventListener('click', () => {
         abrirCalendar('volta');
     });
 
-    // Fechar calendário ao clicar fora
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.field')) {
             fecharCalendars();
         }
     });
 
-    // Submit
     searchForm.addEventListener('submit', (e) => {
         e.preventDefault();
         buscar();
@@ -261,7 +303,6 @@ function selecionarData(tipo, data) {
     if (tipo === 'ida') {
         state.dataIda = dataFormatada;
         dataIdaInput.value = dataFormatada;
-        // Se a data de volta for menor que a de ida, limpar
         if (state.dataVolta && state.dataVolta < dataFormatada) {
             state.dataVolta = '';
             dataVoltaInput.value = '';
@@ -294,13 +335,11 @@ function getNomeMês(mês) {
 // ============================================================
 
 function buscar() {
-    // Apenas origem é obrigatória
     if (!state.origem) {
         alert('Selecione uma cidade de origem');
         return;
     }
     
-    // Se destino não foi selecionado, busca em todas as rotas
     const params = new URLSearchParams({
         origem: state.origem,
         destino: state.destino || '',
