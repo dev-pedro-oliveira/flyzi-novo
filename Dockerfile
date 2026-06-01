@@ -1,4 +1,5 @@
-FROM maven:3.9.1-eclipse-temurin-21 AS builder
+# Build Stage
+FROM maven:3.9.0-eclipse-temurin-21-alpine AS builder
 
 WORKDIR /app
 
@@ -9,7 +10,8 @@ WORKDIR /app/backend
 
 RUN mvn clean package -DskipTests
 
-FROM eclipse-temurin:21-jre
+# Runtime Stage
+FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
